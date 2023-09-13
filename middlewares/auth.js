@@ -1,3 +1,6 @@
+// Import models
+const usersModel = require('../models').users;
+
 // Import modules
 const bcrypt = require('bcrypt');
 const JWT = require('jsonwebtoken');
@@ -5,8 +8,9 @@ const JWT = require('jsonwebtoken');
 // Import files
 const { jwtSecretKey } = require('../appConfig');
 const { IsNullOrEmpty, IsNotNullOrEmpty } = require('../utils/enum');
-const { generalMessages } = require('../utils/messages');
+const { generalMessages, userMessages } = require('../utils/messages');
 const { successObjectResponse, errorObjectResponse } = require('../utils/response');
+const globalController = require('../controllers/globalController');
 
 module.exports = {
   /*
@@ -60,7 +64,13 @@ module.exports = {
         var decoded = {};
         decoded = JWT.verify(req.headers.authorization, jwtSecretKey);
         if (IsNotNullOrEmpty(decoded)) {
-          next();
+          const userDetails = await globalController.getModuleDetails(usersModel,'findOne',{id:decoded.value,activated : true, deleted : false},['id'],true);
+          if(IsNullOrEmpty(userDetails)){
+            throw new Error(userMessages.userNotFound);
+          }else{
+            req.headers.loggedInUserId = decoded.value;
+            next();
+          }
         } else {
           throw new Error(generalMessages.unableToVerifyJwtToken);
         }
