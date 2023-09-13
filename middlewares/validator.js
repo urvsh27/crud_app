@@ -17,11 +17,24 @@ module.exports = function (validatorName) {
       if (!Validators.hasOwnProperty(validatorName)) {
         throw new Error(`'${validatorName}' validator does not exist`);
       }
-      const validated = await Validators[validatorName].validateAsync(
-        req.body,
-        { abortEarly: false }
-      );
-      req.body = validated;
+
+      if(validatorName=='moduleId'){
+        await Validators[validatorName].validateAsync(
+          req.params,
+          { abortEarly: false }
+        );
+      }else if(validatorName=='pagination'){
+        await Validators[validatorName].validateAsync(
+          req.query,
+          { abortEarly: false }
+        );
+      }else{
+        var validated = await Validators[validatorName].validateAsync(
+          req.body,
+          { abortEarly: false }
+        );
+        req.body = validated;
+      }
       next();
     } catch (error) {
       if (error.isJoi===true) {

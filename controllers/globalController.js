@@ -6,8 +6,8 @@ const moment = require('moment');
 
 //Import files
 const Sequelize = require('sequelize');
-const { IsNotNullOrEmpty } = require('../utils/enum');
-const { dateTimeMessages } = require('../utils/messages');
+const { IsNotNullOrEmpty, IsNullOrEmpty } = require('../utils/enum');
+const { dateTimeMessages, generalMessages } = require('../utils/messages');
 
 module.exports = {
   /*
@@ -38,10 +38,30 @@ module.exports = {
         'findOne',
         'findAndCountAll',
       ];
-      if (availableQueryNames.includes(queryName)) {
+      if (IsNullOrEmpty(queryName)) {
+        throw new Error(generalMessages.queryNameNotDefined);
+      } else if (availableQueryNames.includes(queryName)) {
         if (queryName === 'findOne') {
           await modelInstance
             .findOne({
+              attributes: returningAttributes,
+              where: whereCondition,
+              offset: offset,
+              limit: limit,
+              raw: raw,
+              include: modelIncludeData,
+            })
+            .then((queryResult) => {
+              if (IsNotNullOrEmpty(queryResult)) {
+                responseDetails = queryResult;
+              }
+            })
+            .catch((error) => {
+              throw new Error(error.message);
+            });
+        } else if (queryName === 'findAll') {
+          await modelInstance
+            .findAll({
               attributes: returningAttributes,
               where: whereCondition,
               offset: offset,
@@ -110,5 +130,4 @@ module.exports = {
       throw new Error(error.message);
     }
   },
-
 };
